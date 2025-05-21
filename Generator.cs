@@ -67,8 +67,9 @@ public static class Generator
         if (locator == null)
             throw new ArgumentNullException(nameof(locator));
 
-        if (await locator.CountAsync() > 1)
-            for (var i = 0; i < await locator.CountAsync(); i++)
+        var count = await locator.CountAsync();
+        if (count > 1)
+            for (var i = 0; i < count; i++)
                 await locator.Nth(i).GenerateAsync(selector: selector, value: value, mode: mode);
 
         if (selector != null)
@@ -84,16 +85,16 @@ public static class Generator
                 await DefaultGenerate(locaror: locator);
                 break;
             case GenerateMode.DropDown:
-                DropDownListGeneratorAsync(locator, value);
+                await DropDownListGeneratorAsync(locator, value);
                 break;
             case GenerateMode.Combo:
-                ComboAutoCompleteGenerator(locator, value);
+                await ComboAutoCompleteGenerator(locator, value);
                 break;
             case GenerateMode.ComboInGrid:
-                ComboAutoCompleteGeneratorInGrid(locator, value);
+                await ComboAutoCompleteGeneratorInGrid(locator, value);
                 break;
             case GenerateMode.RangeInput:
-                RangeInputGenerator(locator);
+                await RangeInputGenerator(locator);
                 break;
         }
     }
@@ -127,25 +128,25 @@ public static class Generator
             var inputMode = await input.GetAttributeAsync("inputmode");
 
             if (type == "text" && placeholder != "Search Code" && name != "upload" && type != "file")
-                TextboxGenerator(input);
+                await TextboxGenerator(input);
 
             else if (type == "email" || inputMode == "email")
-                EmailGenerator(input);
+                await EmailGenerator(input);
 
             else if (type == "password")
-                PasswordGenerator(input);
+                await PasswordGenerator(input);
 
             else if (type == "tel")
-                TellGenerator(input);
+                await TellGenerator(input);
 
             else if (type == "url" || name == "trackingURL" || name == "website")
-                UrlGenerator(input);
+                await UrlGenerator(input);
 
             else if (type == "range")
-                RangeInputGenerator(input);
+                await RangeInputGenerator(input);
 
             else if (type == "checkbox")
-                CheckboxGenerator(input);
+                await CheckboxGenerator(input);
         }
 
         // for text areas
@@ -154,35 +155,35 @@ public static class Generator
         if (page != null) textareas = await page.Locator("textarea:not([disabled])").AllAsync();
         else textareas = await locaror.Locator("textarea:not([disabled])").AllAsync();
         foreach (var textarea in textareas)
-            TextAreaGenerator(textarea);
+            await TextAreaGenerator(textarea);
 
         // for date picker 
         IReadOnlyList<ILocator>? datePickers;
         if (page != null) datePickers = await page.Locator(".main-modal .main-date-picker_date-wrapper, [data-form-item-type='MainDatePicker'][data-form-item-disabled='false']").AllAsync();
         else datePickers = await locaror.Locator(".main-modal .main-date-picker_date-wrapper, [data-form-item-type='MainDatePicker'][data-form-item-disabled='false']").AllAsync();
         foreach (var datePicker in datePickers)
-            DatePickerGenerator(datePicker);
+            await DatePickerGenerator(datePicker);
 
         // for color picker
         IReadOnlyList<ILocator>? colorPickers;
         if (page != null) colorPickers = await page.Locator("[data-form-item-type='advanceColorPicker']").AllAsync();
         else colorPickers = await locaror.Locator("[data-form-item-type='advanceColorPicker']").AllAsync();
         foreach (var cp in colorPickers)
-            ColorPickerDropDownGenerator(cp);
+            await ColorPickerDropDownGenerator(cp);
 
         // for drop down list
         IReadOnlyList<ILocator>? dropDowns;
         if (page != null) dropDowns = await page.Locator("[data-form-item-type='select'][data-section='formItem']").AllAsync();
         else dropDowns = await locaror.Locator("[data-form-item-type='select'][data-section='formItem']").AllAsync();
         foreach (var dropDown in dropDowns)
-            DropDownListGeneratorAsync(dropDown);
+            await DropDownListGeneratorAsync(dropDown);
 
         // for combo  NOT comboInGrid
         IReadOnlyList<ILocator>? combos;
         if (page != null) combos = await page.Locator(".combo-auto-complete").AllAsync();
         else combos = await locaror.Locator(".combo-auto-complete").AllAsync();
         foreach (var combo in combos)
-            ComboAutoCompleteGenerator(combo);
+            await ComboAutoCompleteGenerator(combo);
     }
 
     #region Generators
@@ -428,7 +429,7 @@ public static class Generator
         await textarea.FillAsync(value);
     }
 
-    private static async void CheckboxGenerator(ILocator input)
+    private static async Task CheckboxGenerator(ILocator input)
     {
         await input.ClearAsync();
     }
