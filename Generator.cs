@@ -276,10 +276,68 @@ public static class Generator
         }
     }
 
-    private static void ComboAutoCompleteGeneratorInGrid(ILocator combo, string filter = null)
+    private static async Task ComboAutoCompleteGeneratorInGrid(ILocator combo, string filter = null)
     {
-        throw new NotImplementedException();
+        try
+        {
+            int tryCount = 0;
+
+        retryClick:
+            if (tryCount >= 2)
+                return;
+
+            tryCount++;
+
+            await combo.ClickAsync();
+
+            var page = ObjectRepository.Driver.OriginalPage;
+            var wrapper = page.Locator(".rnd-wrapper");
+
+            if (!await wrapper.IsVisibleAsync())
+            {
+                await combo.ClickAsync();
+            }
+
+            await page.WaitForSelectorAsync(".loading-parent", new() { State = WaitForSelectorState.Detached });
+
+            var refreshBtn = page.Locator(".combo-toolbox-container .icon-refresh");
+            if (await refreshBtn.IsVisibleAsync())
+            {
+                await refreshBtn.Last.ClickAsync();
+            }
+
+            await page.WaitForSelectorAsync(".loading-parent", new() { State = WaitForSelectorState.Detached });
+
+            if (!string.IsNullOrEmpty(filter))
+            {
+                var searchBox = page.Locator(".top-actions-combo-grid [placeholder='Search']");
+                await searchBox.FillAsync(filter);
+                await page.WaitForTimeoutAsync(500);
+
+                var itemList = wrapper.Locator(".ag-body-viewport.ag-row-animation.ag-layout-normal div[role='row']");
+                var firstItem = itemList.First;
+                if (await firstItem.IsVisibleAsync())
+                {
+                    await firstItem.ClickAsync();
+                }
+
+                var confirmDialog = page.Locator("[data-section='confirmDialog']");
+                if (await confirmDialog.IsVisibleAsync(new() { Timeout = 2000 }))
+                {
+                    var cancelBtn = confirmDialog.Locator("button:has-text('No'), button:has-text('Cancel')");
+                    if (await cancelBtn.IsVisibleAsync())
+                    {
+                        await cancelBtn.ClickAsync();
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Generator.ComboAutoCompleteGeneratorInGrid: " + ex.Message);
+        }
     }
+
 
     private static async Task DropDownListGeneratorAsync(ILocator dropDown)
     {
