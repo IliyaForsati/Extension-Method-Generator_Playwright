@@ -1,5 +1,4 @@
 ﻿using MSTestProject.ComponentHelper;
-using NLog.Filters;
 using RTProSL_MSTest.TestClasses;
 using SeleniumWebdriver.Settings;
 
@@ -187,14 +186,96 @@ public static class Generator
     }
 
     #region Generators
-    private static void ComboAutoCompleteGenerator(ILocator combo)
+    private static async Task ComboAutoCompleteGenerator(ILocator combo, string? filter = null)
     {
-        throw new NotImplementedException();
+        try
+        {
+            var gridIcons = combo.Locator("i[data-icon-name='grid']");
+            int gridCount = await gridIcons.CountAsync();
+
+            for (int i = 0; i < gridCount; i++)
+            {
+                var icon = gridIcons.Nth(i);
+                int tryToClickCount = 0;
+
+            tryClick:
+                try
+                {
+                    if (tryToClickCount >= 2)
+                        continue;
+
+                    tryToClickCount++;
+                    await icon.ClickAsync(new() { Timeout = 3000 });
+                }
+                catch
+                {
+                    try
+                    {
+                        await ObjectRepository.Driver.OriginalPage.EvalOnSelectorAsync(
+                            ".tab-content[data-tab-active='true']",
+                            "el => el.scrollTo({top:0, left:0})"
+                        );
+                        await Task.Delay(200);
+                        goto tryClick;
+                    }
+                    catch
+                    {
+                        continue;
+                    }
+                }
+
+                await ObjectRepository.Driver.OriginalPage.Locator(".loading-parent").WaitForAsync(new() { State = WaitForSelectorState.Detached, Timeout = 10000 });
+
+                var rndWrapper = ObjectRepository.Driver.OriginalPage.Locator(".rnd-wrapper");
+                if (!await rndWrapper.IsVisibleAsync()) break;
+
+                var comboContext = rndWrapper.Locator(".ag-body-viewport.ag-row-animation.ag-layout-normal");
+
+                if (!string.IsNullOrEmpty(filter))
+                {
+                    var searchInput = rndWrapper.Locator(".combo-drag-container [placeholder='Search']");
+                    await searchInput.FillAsync(filter);
+                    await searchInput.PressAsync("Enter");
+                    await ObjectRepository.Driver.OriginalPage.WaitForTimeoutAsync(800);
+
+                    var filteredItem = comboContext.Locator("div", new() { HasText = filter });
+                    if (await filteredItem.IsVisibleAsync())
+                    {
+                        await filteredItem.ClickAsync();
+                        await rndWrapper.Locator(".more-items-visible-children-wrapper .icon-select-grid").ClickAsync();
+                        return;
+                    }
+                }
+
+                var allItems = comboContext.Locator("div.ag-row");
+                int count = await allItems.CountAsync();
+                if (count > 0)
+                {
+                    int randomIndex = int.Parse(RandomValueGenerator.GenerateRandomInt(0, count - 1));
+                    await allItems.Nth(randomIndex).ClickAsync();
+
+                    var selectBtn = rndWrapper.Locator(".icon-select-grid");
+                    if (await selectBtn.IsVisibleAsync())
+                        await selectBtn.ClickAsync();
+                }
+
+                await ObjectRepository.Driver.OriginalPage.Locator(".loading-parent").WaitForAsync(new() { State = WaitForSelectorState.Detached, Timeout = 10000 });
+
+                var confirmDialog = ObjectRepository.Driver.OriginalPage.Locator("[data-section='confirmDialog']");
+                if (await confirmDialog.IsVisibleAsync())
+                {
+                    await ObjectRepository.Driver.OriginalPage.WaitForTimeoutAsync(1000);
+                    var bc = new BaseClass();
+                    bc.ConfirmBtnCheck(dataSection: "CONFIRM_DIALOG", confirm: false);
+                }
+            }
+        }
+        catch
+        {
+            // ignore
+        }
     }
-    private static void ComboAutoCompleteGenerator(ILocator combo, string filter)
-    {
-        throw new NotImplementedException();
-    }
+
     private static void ComboAutoCompleteGeneratorInGrid(ILocator combo, string filter = null)
     {
         throw new NotImplementedException();
