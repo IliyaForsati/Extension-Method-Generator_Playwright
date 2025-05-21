@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Playwright;
+using MSTestProject.ComponentHelper;
 
 namespace RTProSL_MSTest.ComponentHelper;
 
@@ -133,10 +134,10 @@ public static class Generator
                 TextboxGenerator(input);
 
             else if (type == "email" || inputMode == "email")
-                EmailGenerator(input);
+                EmailGeneratorAsync(input);
 
             else if (type == "password")
-                PasswordGenerator(input);
+                PasswordGeneratorAsync(input);
 
             else if (type == "tel")
                 TellGenerator(input);
@@ -246,19 +247,77 @@ public static class Generator
         throw new NotImplementedException();
     }
 
-    private static void PasswordGenerator(ILocator input)
+    private static async Task PasswordGeneratorAsync(ILocator input)
     {
-        throw new NotImplementedException();
+        var maxLengthAttr = await input.GetAttributeAsync("maxlength");
+        int maxLength = 15;
+
+        if (!string.IsNullOrEmpty(maxLengthAttr))
+        {
+            if (int.TryParse(maxLengthAttr, out var parsedMax))
+            {
+                maxLength = Math.Min(parsedMax, 15);
+            }
+        }
+
+        var value = RandomValueGenerator.GenerateRandomString(maxLength);
+
+        await input.FillAsync("");         
+        await input.ClickAsync();          
+        await input.FillAsync(value);
     }
 
-    private static void EmailGenerator(ILocator input)
+    private static async Task EmailGeneratorAsync(ILocator input)
     {
-        throw new NotImplementedException();
+        var value = RandomValueGenerator.GenerateGmail();
+        await input.FillAsync("");         
+        await input.ClickAsync();          
+        await input.FillAsync(value);
     }
 
-    private static void TextboxGenerator(ILocator input)
+    private static async Task TextboxGeneratorAsync(ILocator input) // remove try/catch ???
     {
-        throw new NotImplementedException();
+        try
+        {
+            var inputMode = await input.GetAttributeAsync("inputmode");
+            var type = await input.GetAttributeAsync("type");
+            var maxlengthAttr = await input.GetAttributeAsync("maxlength");
+
+            string value = string.Empty;
+
+            if (inputMode is "numeric" or "decimal" || type is "number")
+            {
+                int maxlength = 2;
+                if (int.TryParse(maxlengthAttr, out var maxLengthParsed))
+                    maxlength = Math.Min(maxLengthParsed, 2);
+
+                int min = 0;
+                int max = 50;
+
+                var minAttr = await input.GetAttributeAsync("min");
+                var maxAttr = await input.GetAttributeAsync("max");
+
+                if (decimal.TryParse(minAttr, out var parsedMin))
+                    min = (int)Math.Max(parsedMin, -100);
+
+                if (decimal.TryParse(maxAttr, out var parsedMax))
+                    max = (int)Math.Min(parsedMax, 50);
+
+                value = RandomValueGenerator.GenerateRandomInt(min, max);
+            }
+            else if (inputMode is "text" || type is "text" || string.IsNullOrEmpty(inputMode))
+            {
+                value = RandomValueGenerator.GenerateRandomString(10);
+            }
+
+            await input.FillAsync("");
+            await input.ClickAsync();
+            await input.FillAsync(value);
+        }
+        catch
+        {
+            // ignored
+        }
     }
     #endregion
 }
