@@ -140,10 +140,10 @@ public static class Generator
                 PasswordGeneratorAsync(input);
 
             else if (type == "tel")
-                TellGenerator(input);
+                TellGeneratorAsync(input);
 
             else if (type == "url" || name == "trackingURL" || name == "website")
-                UrlGenerator(input);
+                UrlGeneratorAsync(input);
 
             else if (type == "range")
                 RangeInputGenerator(input);
@@ -158,7 +158,7 @@ public static class Generator
         if (page != null) textareas = await page.Locator("textarea:not([disabled])").AllAsync();
         else textareas = await locaror.Locator("textarea:not([disabled])").AllAsync();
         foreach (var textarea in textareas)
-            TextAreaGenerator(textarea);
+            TextAreaGeneratorAsync(textarea);
 
         // for date picker 
         IReadOnlyList<ILocator>? datePickers;
@@ -222,9 +222,11 @@ public static class Generator
         throw new NotImplementedException();
     }
 
-    private static void TextAreaGenerator(ILocator textarea)
+    private static async Task TextAreaGeneratorAsync(ILocator textarea)
     {
-        throw new NotImplementedException();
+        var value = RandomValueGenerator.GenerateTextArea(14);
+        await textarea.FillAsync("");
+        await textarea.FillAsync(value);
     }
 
     private static void CheckboxGenerator(ILocator input)
@@ -237,14 +239,27 @@ public static class Generator
         throw new NotImplementedException();
     }
 
-    private static void UrlGenerator(ILocator input)
+    private static async Task UrlGeneratorAsync(ILocator input)
     {
-        throw new NotImplementedException();
+        var value = "https://" + RandomValueGenerator.GenerateRandomString(14) + ".com";
+        await input.FillAsync("");
+        await input.FillAsync(value);
     }
 
-    private static void TellGenerator(ILocator input)
+    private static async Task TellGeneratorAsync(ILocator input)
     {
-        throw new NotImplementedException();
+        var maxLengthAttr = await input.GetAttributeAsync("maxlength");
+        int maxLength = 11;
+
+        if (!string.IsNullOrEmpty(maxLengthAttr))
+        {
+            if (int.TryParse(maxLengthAttr, out var parsed))
+                maxLength = parsed;
+        }
+
+        var value = "09" + RandomValueGenerator.GenerateRandomInt(maxLength - 2);
+        await input.FillAsync("");
+        await input.FillAsync(value);
     }
 
     private static async Task PasswordGeneratorAsync(ILocator input)
