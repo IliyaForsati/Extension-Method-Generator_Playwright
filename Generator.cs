@@ -134,16 +134,16 @@ public static class Generator
                 TextboxGenerator(input);
 
             else if (type == "email" || inputMode == "email")
-                EmailGeneratorAsync(input);
+                EmailGenerator(input);
 
             else if (type == "password")
-                PasswordGeneratorAsync(input);
+                PasswordGenerator(input);
 
             else if (type == "tel")
-                TellGeneratorAsync(input);
+                TellGenerator(input);
 
             else if (type == "url" || name == "trackingURL" || name == "website")
-                UrlGeneratorAsync(input);
+                UrlGenerator(input);
 
             else if (type == "range")
                 RangeInputGenerator(input);
@@ -158,7 +158,7 @@ public static class Generator
         if (page != null) textareas = await page.Locator("textarea:not([disabled])").AllAsync();
         else textareas = await locaror.Locator("textarea:not([disabled])").AllAsync();
         foreach (var textarea in textareas)
-            TextAreaGeneratorAsync(textarea);
+            TextAreaGenerator(textarea);
 
         // for date picker 
         IReadOnlyList<ILocator>? datePickers;
@@ -212,41 +212,75 @@ public static class Generator
         throw new NotImplementedException();
     }
 
-    private static void ColorPickerDropDownGenerator(ILocator cp)
+    private static async Task ColorPickerDropDownGenerator(ILocator input)
     {
-        throw new NotImplementedException();
+        var colorTrigger = input.Locator(".main-color-picker-dropDown_wrapper");
+        await colorTrigger.ClickAsync();
+
+        var colorContext = input.Page.Locator(".main-color-picker-popover");
+        var colorList = colorContext.Locator(".color-item-wrapper");
+
+        int count = await colorList.CountAsync();
+        if (count > 0)
+        {
+            var randomIndex = RandomValueGenerator.GenerateRandomInt(0, count - 1);
+            await colorList.Nth(int.Parse(randomIndex)).ClickAsync();
+        }
     }
 
-    private static void DatePickerGenerator(ILocator datePicker)
+    private static async Task DatePickerGenerator(ILocator input)
     {
-        throw new NotImplementedException();
+        var dateTrigger = input.Locator(".ant-picker-input");
+        await dateTrigger.ClickAsync();
+
+        var todayBtn = input.Page.Locator(".ant-picker-today-btn");
+        var nowBtn = input.Page.Locator(".ant-picker-now-btn");
+
+        if (await todayBtn.IsVisibleAsync())
+        {
+            await todayBtn.Last.ClickAsync();
+        }
+        else if (await nowBtn.IsVisibleAsync())
+        {
+            await nowBtn.Last.ClickAsync();
+        }
     }
 
-    private static async Task TextAreaGeneratorAsync(ILocator textarea)
+    private static async Task TextAreaGenerator(ILocator textarea)
     {
         var value = RandomValueGenerator.GenerateTextArea(14);
         await textarea.FillAsync("");
         await textarea.FillAsync(value);
     }
 
-    private static void CheckboxGenerator(ILocator input)
+    private static async void CheckboxGenerator(ILocator input)
     {
-        throw new NotImplementedException();
+        await input.ClearAsync();
     }
 
-    private static void RangeInputGenerator(ILocator input)
+    private static async Task RangeInputGenerator(ILocator input)
     {
-        throw new NotImplementedException();
+        var valueAttr = await input.GetAttributeAsync("value");
+        var maxAttr = await input.GetAttributeAsync("max");
+
+        if (float.TryParse(valueAttr, out var currentVal) && float.TryParse(maxAttr, out var maxVal))
+        {
+            var steps = int.Parse(RandomValueGenerator.GenerateRandomInt((int)currentVal, (int)maxVal));
+            for (int i = 0; i < steps; i++)
+            {
+                await input.PressAsync("ArrowRight");
+            }
+        }
     }
 
-    private static async Task UrlGeneratorAsync(ILocator input)
+    private static async Task UrlGenerator(ILocator input)
     {
         var value = "https://" + RandomValueGenerator.GenerateRandomString(14) + ".com";
         await input.FillAsync("");
         await input.FillAsync(value);
     }
 
-    private static async Task TellGeneratorAsync(ILocator input)
+    private static async Task TellGenerator(ILocator input)
     {
         var maxLengthAttr = await input.GetAttributeAsync("maxlength");
         int maxLength = 11;
@@ -262,7 +296,7 @@ public static class Generator
         await input.FillAsync(value);
     }
 
-    private static async Task PasswordGeneratorAsync(ILocator input)
+    private static async Task PasswordGenerator(ILocator input)
     {
         var maxLengthAttr = await input.GetAttributeAsync("maxlength");
         int maxLength = 15;
@@ -282,7 +316,7 @@ public static class Generator
         await input.FillAsync(value);
     }
 
-    private static async Task EmailGeneratorAsync(ILocator input)
+    private static async Task EmailGenerator(ILocator input)
     {
         var value = RandomValueGenerator.GenerateGmail();
         await input.FillAsync("");         
@@ -290,7 +324,7 @@ public static class Generator
         await input.FillAsync(value);
     }
 
-    private static async Task TextboxGeneratorAsync(ILocator input) // remove try/catch ???
+    private static async Task TextboxGenerator(ILocator input) // remove try/catch ???
     {
         try
         {
