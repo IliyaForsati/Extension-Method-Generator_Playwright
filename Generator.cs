@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Playwright;
-using MSTestProject.ComponentHelper;
+﻿using MSTestProject.ComponentHelper;
+using NLog.Filters;
+using RTProSL_MSTest.TestClasses;
+using SeleniumWebdriver.Settings;
 
 namespace RTProSL_MSTest.ComponentHelper;
 
@@ -88,7 +85,7 @@ public static class Generator
                 await DefaultGenerate(locaror: locator);
                 break;
             case GenerateMode.DropDown:
-                DropDownListGenerator(locator, value);
+                DropDownListGeneratorAsync(locator, value);
                 break;
             case GenerateMode.Combo:
                 ComboAutoCompleteGenerator(locator, value);
@@ -179,7 +176,7 @@ public static class Generator
         if (page != null) dropDowns = await page.Locator("[data-form-item-type='select'][data-section='formItem']").AllAsync();
         else dropDowns = await locaror.Locator("[data-form-item-type='select'][data-section='formItem']").AllAsync();
         foreach (var dropDown in dropDowns)
-            DropDownListGenerator(dropDown);
+            DropDownListGeneratorAsync(dropDown);
 
         // for combo  NOT comboInGrid
         IReadOnlyList<ILocator>? combos;
@@ -203,13 +200,52 @@ public static class Generator
         throw new NotImplementedException();
     }
 
-    private static void DropDownListGenerator(ILocator dropDown)
+    private static async Task DropDownListGeneratorAsync(ILocator dropDown)
     {
-        throw new NotImplementedException();
+        try
+        {
+        tryToClickOption:
+            await dropDown.ClickAsync();
+            await Task.Delay(300);
+
+            var page = dropDown.Page;
+            var options = page.Locator(".ant-select-item.ant-select-item-option");
+            int count = await options.CountAsync();
+
+            if (count <= 1) return;
+
+            int index = int.Parse(RandomValueGenerator.GenerateRandomInt(1, count - 1));
+
+            try
+            {
+                await options.Nth(index).ClickAsync();
+            }
+            catch
+            {
+                await Task.Delay(200);
+                goto tryToClickOption;
+            }
+
+            var cancelModal = page.Locator("[data-modal-title='CANCEL_REASON']");
+            if (await cancelModal.IsVisibleAsync())
+            {
+                var bc = new BaseClass();
+                bc.ConfirmBtnCheck(dataSection: "MODAL", confirm: false);
+            }
+            
+        }
+        catch
+        {
+            // ignored
+        }
     }
-    private static void DropDownListGenerator(ILocator dropDown, string value)
+    private static async Task DropDownListGeneratorAsync(ILocator dropDown, string value)
     {
-        throw new NotImplementedException();
+        await dropDown.ClickAsync();
+        await Task.Delay(250);
+
+        var option = ObjectRepository.Driver.OriginalPage.Locator($"[title='{value}'] > .ant-select-item-option-content");
+        await option.ClickAsync();
     }
 
     private static async Task ColorPickerDropDownGenerator(ILocator input)
