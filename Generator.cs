@@ -7,7 +7,6 @@ using Microsoft.Playwright;
 
 namespace RTProSL_MSTest.ComponentHelper;
 
-
 /// <summary>
 ///  this class impliment "Extension Method" for IPage and ILocator in "Microsoft.Playwright"
 /// </summary>
@@ -23,7 +22,7 @@ public static class Generator
         RangeInput,
     }
 
-    // services: 
+    #region Extentions
     /// <summary>
     /// page.GenerateAsync(); -> generate data in page
     /// </summary>
@@ -31,6 +30,7 @@ public static class Generator
     /// <param name="selector">select a locator in the page</param>
     /// <param name="value">set the value in page with selector -> for DropDown, Combo & ComboGrid</param>
     /// <param name="mode">select the mode like DropDown or RangeInput from GenerateMode</param>
+    /// <exception cref="Exception">with message: can not use this mode for page. call this mode with the proper locator or selector</exception>
     public static async Task GenerateAsync(this IPage page, string selector = null,
         string value = null, GenerateMode mode = GenerateMode.Default)
     {
@@ -50,15 +50,13 @@ public static class Generator
                 await DefaultGenerate(page: page);
                 break;
             case GenerateMode.DropDown:
-                break;
             case GenerateMode.Combo:
-                break;
             case GenerateMode.ComboInGrid:
-                break;
             case GenerateMode.RangeInput:
-                break;
+                throw new Exception(message: "can not use this mode for page. call this mode with the proper locator or selector");
         }
     }
+
     /// <summary>
     /// locator.GenerateAsync(); -> generate data in locator
     /// </summary>
@@ -71,6 +69,10 @@ public static class Generator
     {
         if (locator == null)
             throw new ArgumentNullException(nameof(locator));
+
+        if (await locator.CountAsync() > 1)
+            for (var i = 0; i < await locator.CountAsync(); i++)
+                await locator.Nth(i).GenerateAsync(selector: selector, value: value, mode: mode);
 
         if (selector != null)
         {
@@ -85,18 +87,26 @@ public static class Generator
                 await DefaultGenerate(locaror: locator);
                 break;
             case GenerateMode.DropDown:
+                DropDownListGenerator(locator, value);
                 break;
             case GenerateMode.Combo:
+                ComboAutoCompleteGenerator(locator, value);
                 break;
             case GenerateMode.ComboInGrid:
+                ComboAutoCompleteGeneratorInGrid(locator, value);
                 break;
             case GenerateMode.RangeInput:
+                RangeInputGenerator(locator);
                 break;
         }
     }
-
+    #endregion
 
     // helper methods
+    /// <summary>
+    /// this method is for generate data in a context with several fields in type input, ...
+    /// that all have mode = GenerateMode.Default
+    /// </summary>
     private static async Task DefaultGenerate(IPage page = null, ILocator locaror = null)
     {
         if (page == null && locaror == null)
@@ -177,4 +187,78 @@ public static class Generator
         foreach (var combo in combos)
             ComboAutoCompleteGenerator(combo);
     }
+
+    #region Generators
+    private static void ComboAutoCompleteGenerator(ILocator combo)
+    {
+        throw new NotImplementedException();
+    }
+    private static void ComboAutoCompleteGenerator(ILocator combo, string filter)
+    {
+        throw new NotImplementedException();
+    }
+    private static void ComboAutoCompleteGeneratorInGrid(ILocator combo, string filter = null)
+    {
+        throw new NotImplementedException();
+    }
+
+    private static void DropDownListGenerator(ILocator dropDown)
+    {
+        throw new NotImplementedException();
+    }
+    private static void DropDownListGenerator(ILocator dropDown, string value)
+    {
+        throw new NotImplementedException();
+    }
+
+    private static void ColorPickerDropDownGenerator(ILocator cp)
+    {
+        throw new NotImplementedException();
+    }
+
+    private static void DatePickerGenerator(ILocator datePicker)
+    {
+        throw new NotImplementedException();
+    }
+
+    private static void TextAreaGenerator(ILocator textarea)
+    {
+        throw new NotImplementedException();
+    }
+
+    private static void CheckboxGenerator(ILocator input)
+    {
+        throw new NotImplementedException();
+    }
+
+    private static void RangeInputGenerator(ILocator input)
+    {
+        throw new NotImplementedException();
+    }
+
+    private static void UrlGenerator(ILocator input)
+    {
+        throw new NotImplementedException();
+    }
+
+    private static void TellGenerator(ILocator input)
+    {
+        throw new NotImplementedException();
+    }
+
+    private static void PasswordGenerator(ILocator input)
+    {
+        throw new NotImplementedException();
+    }
+
+    private static void EmailGenerator(ILocator input)
+    {
+        throw new NotImplementedException();
+    }
+
+    private static void TextboxGenerator(ILocator input)
+    {
+        throw new NotImplementedException();
+    }
+    #endregion
 }
